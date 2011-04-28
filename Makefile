@@ -1,5 +1,7 @@
 obj-m := apathy.o
 
+hostprogs-m += apathy_test
+
 KDIR 	?= $(shell uname -r)
 KPATH 	?= /usr/src/linux-headers-$(KDIR)
 KBDIR	?= /lib/modules/$(KDIR)/build
@@ -12,3 +14,5 @@ default:
 
 clean:
 	$(MAKE) -C $(KPATH) SUBDIRS=$(PWD) clean
+
+__build: $(hostprogs-m)
