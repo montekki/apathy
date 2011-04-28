@@ -8,6 +8,9 @@
 #include <linux/cdev.h>
 #include <linux/fs.h>
 #include <linux/file.h>
+#include <linux/list.h>
+#include <linux/slab.h>
+#include <asm/uaccess.h>
 
 #include "apathy.h"
 
@@ -22,12 +25,15 @@ module_param(pid, int, 0);
 MODULE_PARAM_DESC(pid, "pid");
 */
 
-
 typedef struct rs_break {
+	struct list_head list;
 	struct uprobe probe; // uprobe struct, describing this bpt
 	char new_cont[CONT_MAXLEN]; // new SELinux context of the process
 } rs_break_t;
 
+/* list containing information about probes */
+
+LIST_HEAD(break_list);
 
 static struct class *apathy_class;
 static struct device apathy_dev;
@@ -39,6 +45,10 @@ static void apathy_destructor(struct device *d)
 {
 }
 
+static void uprobe_handler(struct uprobe* u, struct pt_regs *regs)
+{
+}
+
 ssize_t apathy_dev_read(struct file* file, char *buffer,
 		size_t length, loff_t* offset)
 {
@@ -46,10 +56,68 @@ ssize_t apathy_dev_read(struct file* file, char *buffer,
 	return -0;
 }
 
-long apathy_dev_ioctl( struct file *f,
-		unsigned int ioctl_num, unsigned long __user ioctl_param)
+int ioctl_set_break(void __user *p)
 {
-	printk(KERN_INFO "Apaty: asdfasdf\n");
+	struct rs_break *brk = kmalloc(sizeof(struct rs_break),GFP_KERNEL);
+	struct apathy_trans trans;
+
+	if (copy_from_user(&trans, p, sizeof(trans))) {
+		return -EFAULT;
+	}
+
+	if (trans.new_cont[0] == '\0')
+		return -EINVAL;
+
+	brk->probe.pid = trans.pid;
+	brk->probe.vaddr = trans.addr;
+	brk->probe.handler = uprobe_handler;
+
+	memset(brk->new_cont, 0, sizeof(brk->new_cont));
+	strncpy(brk->new_cont, trans.new_cont, CONT_MAXLEN);
+
+	list_add(&brk->list, &break_list);
+
+	//ret = register_uprobe(&brk->probe);
+
+	return 0;
+}
+
+static void free_list()
+{
+	struct list_head *pos,*q;
+	struct rs_break *tmp;
+
+	list_for_each_safe(pos, q, &break_list) {
+		tmp = list_entry(pos, struct rs_break,list);
+		printk(KERN_INFO "Apathy: deleting list: %s\n", tmp->new_cont);
+		// unregister_uprobe(&tmp->probe);
+		list_del(pos);
+
+		kfree(tmp);
+	}
+}
+
+int ioctl_del_break(const struct apathy_trans* tr)
+{
+	return 0;
+}
+
+long apathy_dev_ioctl(struct file *f,
+		unsigned int cmd, unsigned long __user arg)
+{
+	switch (cmd) {
+		case APATHY_IOCTL_SET_BREAK:
+			printk(KERN_INFO "Apathy: ioctl set_break\n");
+
+			return ioctl_set_break((struct apathy_trans*)arg);
+
+		case APATHY_IOCTL_DEL_BREAK:
+			printk(KERN_INFO "Apathy: ioctl del break\n");
+
+			return ioctl_del_break((struct apathy_trans*)arg);
+
+		default: break;
+	}
 	return -0;
 }
 
@@ -77,16 +145,6 @@ int apathy_dev_open(struct inode *i, struct file *f)
 		ret = EBUSY;
 		return ret;
 	}
-
-	/*
-	if (f->ops.open) {
-		ret = f->ops.open(f);
-		if (ret) {
-			module_put(THIS_MODULE);
-			return ret;
-		}
-	}
-	*/
 
 	return 0;
 }
@@ -178,6 +236,7 @@ static void apathy_exit(void)
 	device_unregister(&apathy_dev);
 	unregister_chrdev_region(apathy_devt, 11);
 	class_destroy(apathy_class);
+	free_list();
 }
 
 module_init(apathy_init);
