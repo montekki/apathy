@@ -60,6 +60,7 @@ int ioctl_set_break(void __user *p)
 {
 	struct rs_break *brk = kmalloc(sizeof(struct rs_break),GFP_KERNEL);
 	struct apathy_trans trans;
+	int ret;
 
 	if (copy_from_user(&trans, p, sizeof(trans))) {
 		return -EFAULT;
@@ -77,12 +78,16 @@ int ioctl_set_break(void __user *p)
 
 	list_add(&brk->list, &break_list);
 
-	//ret = register_uprobe(&brk->probe);
+	ret = register_uprobe(&brk->probe);
+
+	if (ret < 0) {
+		printk(KERN_INFO "Apathy: failed to register uprobe\n");
+	}
 
 	return 0;
 }
 
-static void free_list()
+static void free_bpt_list(void)
 {
 	struct list_head *pos,*q;
 	struct rs_break *tmp;
@@ -90,7 +95,7 @@ static void free_list()
 	list_for_each_safe(pos, q, &break_list) {
 		tmp = list_entry(pos, struct rs_break,list);
 		printk(KERN_INFO "Apathy: deleting list: %s\n", tmp->new_cont);
-		// unregister_uprobe(&tmp->probe);
+		unregister_uprobe(&tmp->probe);
 		list_del(pos);
 
 		kfree(tmp);
@@ -236,7 +241,7 @@ static void apathy_exit(void)
 	device_unregister(&apathy_dev);
 	unregister_chrdev_region(apathy_devt, 11);
 	class_destroy(apathy_class);
-	free_list();
+	free_bpt_list();
 }
 
 module_init(apathy_init);
