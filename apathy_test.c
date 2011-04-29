@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <string.h>
 
 #include "apathy.h"
@@ -15,8 +16,8 @@ int main(int argc, char ** argv)
 	int res;
 	int fd;
 
-	tr.pid = 1488;
-	tr.addr = 0x08888;
+	tr.pid = getpid();
+	tr.addr = &&addr;
 	memset(tr.new_cont,0,sizeof(tr.new_cont));
 	strncpy(tr.new_cont, "New context", CONT_MAXLEN-1);
 
@@ -30,5 +31,9 @@ int main(int argc, char ** argv)
 
 	res = ioctl(fd, APATHY_IOCTL_SET_BREAK, &tr);
 
+	while (1) {
+addr:
+		sleep(1);
+	}
 	return 0;
 }
