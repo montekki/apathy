@@ -41,6 +41,17 @@ static void apathy_destructor(struct device *d)
 
 static void uprobe_handler(struct uprobe* u, struct pt_regs *regs)
 {
+	struct list_head *pos;
+	struct rs_break *tmp;
+
+	list_for_each(pos, &break_list) {
+		tmp = list_entry(pos, struct rs_break, list);
+		if (tmp->probe.vaddr == u->vaddr ) {
+			printk(KERN_INFO "Hit breakpoint at: %p\n", (void*)u->vaddr);
+			printk(KERN_INFO "New context is %s\n", tmp->new_cont);
+			break;
+		}
+	}
 }
 
 ssize_t apathy_dev_read(struct file* file, char *buffer,
