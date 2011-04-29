@@ -19,12 +19,6 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Fedor Sakharov <sakharov@lvk.cs.msu.su>");
 MODULE_DESCRIPTION("Application safe execution control");
 
-/*
-static int pid = 0;
-module_param(pid, int, 0);
-MODULE_PARAM_DESC(pid, "pid");
-*/
-
 typedef struct rs_break {
 	struct list_head list;
 	struct uprobe probe; // uprobe struct, describing this bpt
