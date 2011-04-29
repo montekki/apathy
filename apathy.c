@@ -78,6 +78,8 @@ int ioctl_set_break(void __user *p)
 	brk->probe.vaddr = trans.addr;
 	brk->probe.handler = uprobe_handler;
 
+	printk(KERN_INFO "Apathy: Setting breakpoint pid %d vaddr %p\n",
+			brk->probe.pid, (void*)brk->probe.vaddr);
 	memset(brk->new_cont, 0, sizeof(brk->new_cont));
 	strncpy(brk->new_cont, trans.new_cont, CONT_MAXLEN);
 
@@ -85,8 +87,10 @@ int ioctl_set_break(void __user *p)
 
 	ret = register_uprobe(&brk->probe);
 
-	if (ret < 0) {
+	if (ret != 0) {
 		printk(KERN_INFO "Apathy: failed to register uprobe\n");
+		printk(KERN_INFO "Apathy: returned %d\n", ret);
+		return -1;
 	}
 
 	return 0;
