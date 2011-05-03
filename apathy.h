@@ -10,8 +10,11 @@
 #endif
 
 
+/*FIXME: dude, srsly, look up the proper defines*/
 /* max assumed length of SELinux context */
 #define CONT_MAXLEN 		256
+/* max assumed len of binary to execute */
+#define NAMELEN 		256
 
 /*FIXME: Check ioctl number */
 #define APATHY_IOCTL_MAGIC 	0x8e
@@ -20,9 +23,9 @@
   \brief information about context transition point
   */
 struct apathy_trans {
-	unsigned int pid; 		/*!< pid of the process */
 	unsigned long addr; 		/*!< address of the break */
 	char new_cont[CONT_MAXLEN]; 	/*!< new context */
+	char bin_file[NAMELEN];		/*!< binary which process to probe */
 };
 	
 /*! \def APATHY_IOCTL_SET_BREAK
