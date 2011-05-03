@@ -16,10 +16,10 @@ int main(int argc, char ** argv)
 	int res;
 	int fd;
 
-	tr.pid = getpid();
-	tr.addr = &&addr;
+	strcpy(tr.bin_file, "/root/apathy/apathy_test2");
+	tr.addr = 0x4005f8; // &&addr;
 	memset(tr.new_cont,0,sizeof(tr.new_cont));
-	strncpy(tr.new_cont, "New context", CONT_MAXLEN-1);
+	strncpy(tr.new_cont, "system_u:system_r:sshd_t:s0-s0:c0.c1023", CONT_MAXLEN-1);
 
 	fd = open( APATHY_DEVICE, O_RDWR );
 
@@ -31,9 +31,14 @@ int main(int argc, char ** argv)
 
 	res = ioctl(fd, APATHY_IOCTL_SET_BREAK, &tr);
 
+	/*
+	getchar();
+
+	printf("shit\n");
 	while (1) {
 addr:
 		sleep(1);
 	}
+	*/
 	return 0;
 }
