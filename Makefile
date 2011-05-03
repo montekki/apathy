@@ -1,6 +1,7 @@
 obj-m := apathy.o
 
 hostprogs-m += apathy_test
+hostprogs-m += apathy_test2
 
 KDIR 	?= $(shell uname -r)
 KPATH 	?= /usr/src/linux-headers-$(KDIR)

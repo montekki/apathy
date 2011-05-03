@@ -9,3 +9,4 @@ modules.order
 *.mod.c
 .tmp_versions
 apathy_test
+apathy_test2
